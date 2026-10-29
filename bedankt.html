@@ -186,27 +186,27 @@
   © 2026 De Groot &amp; Celen · Project door RDK
 </footer>
 
-<!-- Meta Pixel + Lead event — load only if consent was granted on the landing page -->
+<!-- Meta Pixel — always loaded in revoke state, grants on prior consent, fires Lead -->
+<script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('consent', 'revoke');
+  fbq('init', '4683685955193887');
+</script>
 <script>
   (function () {
     const CONSENT_KEY = 'kijkdag_consent';
     const LEAD_KEY = 'kijkdag_lead_fired';
-    const PIXEL_ID = '4683685955193887';
-
     let saved = null;
     try { saved = localStorage.getItem(CONSENT_KEY); } catch(_) {}
     if (saved !== 'granted') return;
 
-    // Load Pixel
-    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
-    document,'script','https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', PIXEL_ID);
+    fbq('consent', 'grant');
     fbq('track', 'PageView');
 
-    // Lead — only once per session
     try {
       if (!sessionStorage.getItem(LEAD_KEY)) {
         fbq('track', 'Lead', { content_name: 'Kijkdag Heultje', value: 1, currency: 'EUR' });
