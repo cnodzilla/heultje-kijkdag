@@ -198,17 +198,15 @@
 </script>
 <script>
   (function () {
-    const CONSENT_KEY = 'kijkdag_consent';
     const LEAD_KEY = 'kijkdag_lead_fired';
-    let saved = null;
-    try { saved = localStorage.getItem(CONSENT_KEY); } catch(_) {}
-    if (saved !== 'granted') return;
     try {
       if (!sessionStorage.getItem(LEAD_KEY)) {
         fbq('track', 'Lead', { content_name: 'Kijkdag Heultje', value: 1, currency: 'EUR' });
         sessionStorage.setItem(LEAD_KEY, '1');
       }
-    } catch(_) {}
+    } catch(_) {
+      fbq('track', 'Lead', { content_name: 'Kijkdag Heultje', value: 1, currency: 'EUR' });
+    }
   })();
 </script>
 
