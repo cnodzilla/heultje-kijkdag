@@ -1146,20 +1146,100 @@
   })();
 </script>
 
-<!-- Meta Pixel & GA4 scaffolding – ONLY LOAD AFTER CONSENT.
-     Replace IDs and wire into your consent-management platform.
+<!-- Cookie consent banner -->
+<style>
+  .cookie-banner {
+    position: fixed; left: 1rem; right: 1rem; bottom: 1rem;
+    z-index: 90;
+    background: #fff;
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.25);
+    padding: 1.1rem 1.3rem;
+    display: none;
+    gap: 1rem;
+    align-items: center; justify-content: space-between;
+    flex-wrap: wrap;
+    font-size: 0.9rem; color: var(--ink-soft);
+    max-width: 760px; margin: 0 auto;
+  }
+  .cookie-banner.show { display: flex; }
+  .cookie-banner p { margin: 0; max-width: 48ch; }
+  .cookie-banner strong { color: var(--ink); }
+  .cookie-banner .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .cookie-banner button {
+    padding: 0.6rem 1.1rem; font-weight: 600; font-size: 0.86rem;
+    border-radius: 2px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .cookie-banner button.accept {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .cookie-banner button.accept:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .cookie-banner button.decline:hover { background: var(--paper); }
+  @media (max-width: 820px) {
+    .cookie-banner { left: 0.6rem; right: 0.6rem; bottom: 76px; padding: 0.9rem 1rem; font-size: 0.86rem; }
+  }
+</style>
+<div class="cookie-banner" id="cookie-banner" role="dialog" aria-label="Cookies">
+  <p><strong>Cookies.</strong> We gebruiken enkel cookies om onze advertenties beter af te stemmen (Meta Pixel). Ga je akkoord?</p>
+  <div class="actions">
+    <button type="button" class="decline" id="cookie-decline">Weigeren</button>
+    <button type="button" class="accept" id="cookie-accept">Akkoord</button>
+  </div>
+</div>
+
 <script>
-  window.__consent = false; // set to true after valid consent
-  // Meta Pixel
-  !function(f,b,e,v,n,t,s){ ... }(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', 'YOUR_PIXEL_ID');
-  fbq('track', 'PageView');
-  // GA4
-  // <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
-  // window.dataLayer = window.dataLayer || [];
-  // function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config','G-XXXXXXX');
+  // Meta Pixel loader — only after consent
+  (function () {
+    const KEY = 'kijkdag_consent';
+    const PIXEL_ID = '4683685955193887';
+    const banner = document.getElementById('cookie-banner');
+
+    function loadPixel() {
+      if (window.fbq) return;
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', PIXEL_ID);
+      fbq('track', 'PageView');
+    }
+
+    function accept() {
+      try { localStorage.setItem(KEY, 'granted'); } catch(_) {}
+      window.__consent = true;
+      banner.classList.remove('show');
+      loadPixel();
+    }
+    function decline() {
+      try { localStorage.setItem(KEY, 'denied'); } catch(_) {}
+      window.__consent = false;
+      banner.classList.remove('show');
+    }
+
+    let saved = null;
+    try { saved = localStorage.getItem(KEY); } catch(_) {}
+    if (saved === 'granted') {
+      window.__consent = true;
+      loadPixel();
+    } else if (saved === 'denied') {
+      window.__consent = false;
+    } else {
+      // show banner on first visit
+      banner.classList.add('show');
+    }
+
+    document.getElementById('cookie-accept').addEventListener('click', accept);
+    document.getElementById('cookie-decline').addEventListener('click', decline);
+  })();
 </script>
--->
+
+<noscript>
+  <img height="1" width="1" style="display:none" alt=""
+       src="https://www.facebook.com/tr?id=4683685955193887&ev=PageView&noscript=1">
+</noscript>
 
 </body>
 </html>
