@@ -1189,15 +1189,15 @@
   </div>
 </div>
 
-<!-- Meta Pixel base code — loads on every visit in "revoke" state until consent -->
+<!-- Meta Pixel base code — PageView fires on every visit, advanced events gated behind consent -->
 <script>
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
   n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
   n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
   t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
   document,'script','https://connect.facebook.net/en_US/fbevents.js');
-  fbq('consent', 'revoke');
   fbq('init', '4683685955193887');
+  fbq('track', 'PageView');
 </script>
 
 <script>
@@ -1208,32 +1208,19 @@
     function grant() {
       try { localStorage.setItem(KEY, 'granted'); } catch(_) {}
       window.__consent = true;
-      if (typeof fbq === 'function') {
-        fbq('consent', 'grant');
-        fbq('track', 'PageView');
-      }
       banner.classList.remove('show');
     }
     function revoke() {
       try { localStorage.setItem(KEY, 'denied'); } catch(_) {}
       window.__consent = false;
-      if (typeof fbq === 'function') fbq('consent', 'revoke');
       banner.classList.remove('show');
     }
 
     let saved = null;
     try { saved = localStorage.getItem(KEY); } catch(_) {}
-    if (saved === 'granted') {
-      window.__consent = true;
-      if (typeof fbq === 'function') {
-        fbq('consent', 'grant');
-        fbq('track', 'PageView');
-      }
-    } else if (saved === 'denied') {
-      window.__consent = false;
-    } else {
-      banner.classList.add('show');
-    }
+    if (saved === 'granted') { window.__consent = true; }
+    else if (saved === 'denied') { window.__consent = false; }
+    else { banner.classList.add('show'); }
 
     document.getElementById('cookie-accept').addEventListener('click', grant);
     document.getElementById('cookie-decline').addEventListener('click', revoke);
