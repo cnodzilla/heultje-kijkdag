@@ -107,7 +107,6 @@ async function sendOfficeNotification(record) {
   if (!from || !notify) return;
 
   const slotLabel = record.slot ? `${record.slot.replace('-',':00 – ')}:00` : '(geen voorkeur)';
-  const utm = record.utm || {};
   const subject = `Nieuwe inschrijving kijkdag: ${record.voornaam} ${record.achternaam}`;
   const html = `
     <div style="font-family: 'Inter', system-ui, sans-serif; color:#1d1d1b; line-height:1.55; max-width:640px;">
@@ -121,19 +120,7 @@ async function sendOfficeNotification(record) {
         <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Telefoon</td><td><a href="tel:${esc(record.telefoon.replace(/\s+/g,''))}" style="color:#df6927;">${esc(record.telefoon)}</a></td></tr>
         <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Voorkeur tijdslot</td><td>${esc(slotLabel)}</td></tr>
         <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Opmerking</td><td>${record.opmerking ? esc(record.opmerking).replace(/\n/g,'<br>') : '<span style="color:#7a7772;">(geen)</span>'}</td></tr>
-      </table>
-
-      <h2 style="font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:#7a7772; margin:24px 0 8px; font-weight:500;">Herkomst</h2>
-      <table style="border-collapse:collapse; width:100%; font-size:13px;">
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772; width:170px;">Bron (utm_source)</td><td>${esc(utm.utm_source || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Campagne (utm_campaign)</td><td>${esc(utm.utm_campaign || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Medium (utm_medium)</td><td>${esc(utm.utm_medium || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Content (utm_content)</td><td>${esc(utm.utm_content || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Term (utm_term)</td><td>${esc(utm.utm_term || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Landingspagina</td><td style="word-break:break-all;">${esc(record.page || '-')}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">IP</td><td>${esc(record.ip)}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">User-agent</td><td style="word-break:break-all;">${esc(record.ua)}</td></tr>
-        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Privacy akkoord</td><td>${record.privacy ? 'ja' : 'nee'}</td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Privacy akkoord</td><td>${record.privacy ? 'ja' : 'nee'}</td></tr>
       </table>
 
       <p style="color:#7a7772; font-size:12px; margin-top:24px;">Automatische notificatie – kijkdag-rdk-heultje.degroot-celen.be</p>
