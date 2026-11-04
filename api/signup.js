@@ -58,39 +58,94 @@ async function forwardWebhook(record) {
   }
 }
 
-async function sendConfirmation(record) {
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function resendSend(payload) {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM;
-  if (!key || !from) return;
-
-  const to = [record.email];
-  if (process.env.NOTIFY_EMAIL) to.push(process.env.NOTIFY_EMAIL);
-
-  const subject = 'Je inschrijving voor de kijkdag Heultje is bevestigd';
-  const html = `
-    <div style="font-family: 'Inter', system-ui, sans-serif; color:#1d1d1b; line-height:1.55; max-width:560px;">
-      <h1 style="font-size:22px; margin:0 0 12px;">Dag ${record.voornaam},</h1>
-      <p>Bedankt voor je inschrijving voor de kijkdag van ons nieuwbouwproject in Heultje.</p>
-      <table style="border-collapse:collapse; margin:16px 0 20px;">
-        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Datum</td><td><strong>Zaterdag 28 november 2026</strong></td></tr>
-        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Uren</td><td>10:00 – 14:00 (doorlopend)</td></tr>
-        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Locatie</td><td>Dokter Jozef Draulansstraat, 2260 Westerlo (Heultje)</td></tr>
-        ${record.slot ? `<tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Voorkeur</td><td>${record.slot.replace('-',':00 – ')}:00</td></tr>` : ''}
-      </table>
-      <p>Je mag langskomen wanneer het jou past binnen die uren. Vragen? Bel ons op <a href="tel:+3214953750" style="color:#df6927;">014 95 37 50</a> of antwoord gewoon op deze mail.</p>
-      <p style="color:#7a7772; font-size:13px; margin-top:28px;">De Groot &amp; Celen · Project door RDK</p>
-    </div>`;
-
+  if (!key) return;
   try {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html, reply_to: 'secretariaat@degroot-celen.be' }),
+      body: JSON.stringify(payload),
     });
     if (!resp.ok) console.error('[resend] status:', resp.status, await resp.text());
   } catch (e) {
     console.error('[resend] failed:', e.message);
   }
+}
+
+async function sendVisitorConfirmation(record) {
+  const from = process.env.RESEND_FROM;
+  if (!from) return;
+
+  const subject = 'Je inschrijving voor de kijkdag Heultje is bevestigd';
+  const html = `
+    <div style="font-family: 'Inter', system-ui, sans-serif; color:#1d1d1b; line-height:1.55; max-width:560px;">
+      <h1 style="font-size:22px; margin:0 0 12px;">Dag ${esc(record.voornaam)},</h1>
+      <p>Bedankt voor je inschrijving voor de kijkdag van ons nieuwbouwproject in Heultje.</p>
+      <table style="border-collapse:collapse; margin:16px 0 20px;">
+        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Datum</td><td><strong>Zaterdag 28 november 2026</strong></td></tr>
+        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Uren</td><td>10:00 – 14:00 (doorlopend)</td></tr>
+        <tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Locatie</td><td>Dokter Jozef Draulansstraat, 2260 Westerlo (Heultje)</td></tr>
+        ${record.slot ? `<tr><td style="padding:4px 16px 4px 0; color:#7a7772;">Voorkeur</td><td>${esc(record.slot.replace('-',':00 – '))}:00</td></tr>` : ''}
+      </table>
+      <p>Je mag langskomen wanneer het jou past binnen die uren. Vragen? Bel ons op <a href="tel:+3214953750" style="color:#df6927;">014 95 37 50</a> of antwoord gewoon op deze mail.</p>
+      <p style="color:#7a7772; font-size:13px; margin-top:28px;">De Groot &amp; Celen · Project door RDK</p>
+    </div>`;
+
+  await resendSend({ from, to: [record.email], subject, html, reply_to: 'secretariaat@degroot-celen.be' });
+}
+
+async function sendOfficeNotification(record) {
+  const from = process.env.RESEND_FROM;
+  const notify = process.env.NOTIFY_EMAIL;
+  if (!from || !notify) return;
+
+  const slotLabel = record.slot ? `${record.slot.replace('-',':00 – ')}:00` : '(geen voorkeur)';
+  const utm = record.utm || {};
+  const subject = `Nieuwe inschrijving kijkdag: ${record.voornaam} ${record.achternaam}`;
+  const html = `
+    <div style="font-family: 'Inter', system-ui, sans-serif; color:#1d1d1b; line-height:1.55; max-width:640px;">
+      <h1 style="font-size:20px; margin:0 0 6px;">Nieuwe inschrijving kijkdag Heultje</h1>
+      <p style="color:#7a7772; margin:0 0 18px; font-size:13px;">Ontvangen op ${esc(new Date(record.received_at).toLocaleString('nl-BE', { timeZone: 'Europe/Brussels' }))}</p>
+
+      <table style="border-collapse:collapse; width:100%; font-size:14px;">
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; width:170px; vertical-align:top;">Voornaam</td><td><strong>${esc(record.voornaam)}</strong></td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Achternaam</td><td><strong>${esc(record.achternaam)}</strong></td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">E-mail</td><td><a href="mailto:${esc(record.email)}" style="color:#df6927;">${esc(record.email)}</a></td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Telefoon</td><td><a href="tel:${esc(record.telefoon.replace(/\s+/g,''))}" style="color:#df6927;">${esc(record.telefoon)}</a></td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Voorkeur tijdslot</td><td>${esc(slotLabel)}</td></tr>
+        <tr><td style="padding:6px 14px 6px 0; color:#7a7772; vertical-align:top;">Opmerking</td><td>${record.opmerking ? esc(record.opmerking).replace(/\n/g,'<br>') : '<span style="color:#7a7772;">(geen)</span>'}</td></tr>
+      </table>
+
+      <h2 style="font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:#7a7772; margin:24px 0 8px; font-weight:500;">Herkomst</h2>
+      <table style="border-collapse:collapse; width:100%; font-size:13px;">
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772; width:170px;">Bron (utm_source)</td><td>${esc(utm.utm_source || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Campagne (utm_campaign)</td><td>${esc(utm.utm_campaign || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Medium (utm_medium)</td><td>${esc(utm.utm_medium || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Content (utm_content)</td><td>${esc(utm.utm_content || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Term (utm_term)</td><td>${esc(utm.utm_term || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Landingspagina</td><td style="word-break:break-all;">${esc(record.page || '-')}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">IP</td><td>${esc(record.ip)}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">User-agent</td><td style="word-break:break-all;">${esc(record.ua)}</td></tr>
+        <tr><td style="padding:4px 14px 4px 0; color:#7a7772;">Privacy akkoord</td><td>${record.privacy ? 'ja' : 'nee'}</td></tr>
+      </table>
+
+      <p style="color:#7a7772; font-size:12px; margin-top:24px;">Automatische notificatie – kijkdag-rdk-heultje.degroot-celen.be</p>
+    </div>`;
+
+  await resendSend({
+    from,
+    to: [notify],
+    subject,
+    html,
+    reply_to: record.email,
+  });
 }
 
 export default async function handler(req, res) {
@@ -116,8 +171,12 @@ export default async function handler(req, res) {
     received_at: new Date().toISOString(),
   };
 
-  // Fire-and-forget both — but await so Vercel keeps the function alive.
-  await Promise.allSettled([forwardWebhook(record), sendConfirmation(record)]);
+  // Fire-and-forget all — but await so Vercel keeps the function alive.
+  await Promise.allSettled([
+    forwardWebhook(record),
+    sendVisitorConfirmation(record),
+    sendOfficeNotification(record),
+  ]);
 
   return res.status(200).json({ ok: true });
 }
